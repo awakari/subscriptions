@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package awakari.subscriptions;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "./api/grpc";
@@ -9,9 +10,26 @@ option go_package = "./api/grpc";
 service Service {
   rpc Update(UpdateRequest) returns (UpdateResponse);
   rpc Delete(DeleteRequest) returns (DeleteResponse);
+  rpc ListByInterest(ListByInterestRequest) returns (ListByInterestResponse);
   rpc Count(CountRequest) returns (CountResponse);
   rpc DeleteExtra(DeleteExtraRequest) returns (DeleteExtraResponse);
   rpc ChangeOwner(ChangeOwnerRequest) returns (ChangeOwnerResponse);
+}
+
+enum Format {
+  Rss = 0;
+  CeJs = 1;
+  Html = 2;
+}
+
+message Subscription {
+  string groupId = 1;
+  string userId = 2;
+  string url = 3;
+  Format format = 4;
+  bytes secret = 5;
+  google.protobuf.Timestamp lastResultAt = 6;
+  google.protobuf.Duration intervalMin = 7;
 }
 
 message UpdateRequest {
@@ -37,6 +55,16 @@ message DeleteRequest {
 }
 
 message DeleteResponse {
+}
+
+message ListByInterestRequest {
+  string interestId = 1;
+  string cursor = 2;
+  uint32 limit = 3;
+}
+
+message ListByInterestResponse {
+  repeated Subscription page = 1;
 }
 
 // Count

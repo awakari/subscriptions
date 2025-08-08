@@ -55,6 +55,13 @@ func (sl logging) Update(ctx context.Context, sub model.Subscription) (err error
 	return
 }
 
+func (sl logging) ListByInterest(ctx context.Context, limit uint32, interestId, cursor string) (page []model.Subscription, err error) {
+	page, err = sl.svc.ListByInterest(ctx, limit, interestId, cursor)
+	ll := util.LogLevel(err)
+	sl.log.Log(ctx, ll, fmt.Sprintf("service.ListByInterest(%d, %s, %s): %d, err=%s", limit, interestId, cursor, len(page), err))
+	return
+}
+
 func (sl logging) CountByInterest(ctx context.Context, interestId string) (count int64, err error) {
 	count, err = sl.svc.CountByInterest(ctx, interestId)
 	ll := util.LogLevel(err)

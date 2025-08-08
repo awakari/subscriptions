@@ -3,10 +3,13 @@ package grpc
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/awakari/subscriptions/model"
 	"github.com/awakari/subscriptions/service"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"io"
 )
 
@@ -36,6 +39,38 @@ func (c controller) Update(ctx context.Context, req *UpdateRequest) (resp *Updat
 func (c controller) Delete(ctx context.Context, req *DeleteRequest) (resp *DeleteResponse, err error) {
 	resp = &DeleteResponse{}
 	err = c.svc.Unsubscribe(ctx, req.InterestId, req.GroupId, req.UserId, req.Url)
+	err = encodeError(err)
+	return
+}
+
+func (c controller) ListByInterest(ctx context.Context, req *ListByInterestRequest) (resp *ListByInterestResponse, err error) {
+	resp = &ListByInterestResponse{}
+	var page []model.Subscription
+	page, err = c.svc.ListByInterest(ctx, req.Limit, req.InterestId, req.Cursor)
+	if err == nil {
+		for _, sub := range page {
+			var f Format
+			switch sub.Format {
+			case model.FormatRss:
+				f = Format_Rss
+			case model.FormatCeJs:
+				f = Format_CeJs
+			case model.FormatHtml:
+				f = Format_Html
+			default:
+				err = errors.New(fmt.Sprintf("unknown subscription format: %s", sub.Format))
+			}
+			resp.Page = append(resp.Page, &Subscription{
+				GroupId:      sub.GroupId,
+				UserId:       sub.UserId,
+				Url:          sub.Url,
+				Format:       f,
+				Secret:       sub.Secret,
+				LastResultAt: timestamppb.New(sub.LastResultAt),
+				IntervalMin:  durationpb.New(sub.IntervalMin),
+			})
+		}
+	}
 	err = encodeError(err)
 	return
 }

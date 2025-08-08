@@ -23,6 +23,7 @@ type Service interface {
 	Unsubscribe(ctx context.Context, interestId, groupId, userId, url string) (err error)
 	UnsubscribeByInterest(ctx context.Context, interestId string) (count int64, err error)
 	Update(ctx context.Context, sub model.Subscription) (err error)
+	ListByInterest(ctx context.Context, limit uint32, interestId, cursor string) (page []model.Subscription, err error)
 	ListByUrl(ctx context.Context, limit uint32, url, cursor string) (page []string, err error)
 	ListByUser(ctx context.Context, limit uint32, groupId, userId string) (page []model.Subscription, err error)
 	DeleteExtra(ctx context.Context, limit uint32, groupId, userId string) (nLeft, nDeleted int64, err error)
@@ -144,6 +145,14 @@ func (svc service) Update(ctx context.Context, sub model.Subscription) (err erro
 		err = fmt.Errorf("%w: %s, %s", ErrNotFound, sub.InterestId, sub.Url)
 	case err != nil:
 		err = fmt.Errorf("%w: %s, %s, %s", ErrInternal, sub.InterestId, sub.Url, err)
+	}
+	return
+}
+
+func (svc service) ListByInterest(ctx context.Context, limit uint32, interestId, cursor string) (page []model.Subscription, err error) {
+	page, err = svc.stor.ListByInterest(ctx, limit, interestId, cursor)
+	if err != nil {
+		err = fmt.Errorf("%w, interest: %s, %s", ErrInternal, interestId, err)
 	}
 	return
 }
