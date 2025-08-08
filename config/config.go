@@ -54,17 +54,17 @@ type UsageConfig struct {
 }
 
 type DbConfig struct {
-	Uri      string `envconfig:"DB_SUBSCRIPTIONS_URI" default:"mongodb://localhost:27017/?retryWrites=true&w=majority" required:"true"`
-	Name     string `envconfig:"DB_SUBSCRIPTIONS_NAME" default:"subscriptions" required:"true"`
-	UserName string `envconfig:"DB_SUBSCRIPTIONS_USERNAME" default:""`
-	Password string `envconfig:"DB_SUBSCRIPTIONS_PASSWORD" default:""`
+	Uri      string `envconfig:"DB_URI" default:"mongodb://localhost:27017/?retryWrites=true&w=majority" required:"true"`
+	Name     string `envconfig:"DB_NAME" default:"subscriptions" required:"true"`
+	UserName string `envconfig:"DB_USERNAME" default:""`
+	Password string `envconfig:"DB_PASSWORD" default:""`
 	Table    struct {
-		Name  string `envconfig:"DB_SUBSCRIPTIONS_TABLE_NAME" default:"subscriptions" required:"true"`
-		Shard bool   `envconfig:"DB_SUBSCRIPTIONS_TABLE_SHARD" default:"true"`
+		Name  string `envconfig:"DB_TABLE_NAME" default:"subscriptions" required:"true"`
+		Shard bool   `envconfig:"DB_TABLE_SHARD" default:"true"`
 	}
 	Tls struct {
-		Enabled  bool `envconfig:"DB_SUBSCRIPTIONS_TLS_ENABLED" default:"false" required:"true"`
-		Insecure bool `envconfig:"DB_SUBSCRIPTIONS_TLS_INSECURE" default:"false" required:"true"`
+		Enabled  bool `envconfig:"DB_TLS_ENABLED" default:"false" required:"true"`
+		Insecure bool `envconfig:"DB_TLS_INSECURE" default:"false" required:"true"`
 	}
 	Cache CacheConfig
 }
