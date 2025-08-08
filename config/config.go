@@ -99,9 +99,6 @@ type EventsConfig struct {
 		Limit  uint32 `envconfig:"API_EVENTS_FOLLOWERS_CHANGED_LIMIT" default:"1000" required:"true"`
 		Topic  string `envconfig:"API_EVENTS_FOLLOWERS_CHANGED_TOPIC" default:"followers-changed" required:"true"`
 	}
-	Interests struct {
-		ObjectUrlPrefix string `envconfig:"API_EVENTS_INTERESTS_OBJECT_URL_PREFIX" default:"https://awakari.com/sub-details.html?id=" required:"true"`
-	}
 }
 
 type MetricsConfig struct {

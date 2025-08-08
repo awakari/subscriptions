@@ -33,7 +33,7 @@ import (
 
 // @title           Awakari Subscriptions API
 // @version         1.0
-// @description     Subscriptions API service is responsible for managing interest storage.
+// @description     Subscriptions API service is responsible for managing interest subscriptions.
 
 // @contact.name   Awakari Support
 // @contact.email  awakari@awakari.com
