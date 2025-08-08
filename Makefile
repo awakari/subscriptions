@@ -18,17 +18,17 @@ proto:
 vet: proto
 	go vet
 
-test: vet
+swagger:
+	go install github.com/swaggo/swag/cmd/swag@latest
+	PATH=${PATH}:~/go/bin swag init
+
+test: vet swagger
 	go test -race -cover -coverprofile=${COVERAGE_FILE_NAME} ./...
 	cat ${COVERAGE_FILE_NAME} | grep -v _mock.go | grep -v logging.go | grep -v .pb.go > ${COVERAGE_FILE_NAME}.tmp
 	mv -f ${COVERAGE_FILE_NAME}.tmp ${COVERAGE_FILE_NAME}
 	go tool cover -func=${COVERAGE_FILE_NAME} | grep -Po '^total\:\h+\(statements\)\h+\K.+(?=\.\d+%)' > ${COVERAGE_TMP_FILE_NAME}
 	./scripts/cover.sh
 	rm -f ${COVERAGE_TMP_FILE_NAME}
-
-swagger:
-	go install github.com/swaggo/swag/cmd/swag@latest
-	PATH=${PATH}:~/go/bin swag init
 
 build: proto swagger
 	GOOS=linux go build -o ${BINARY_FILE_NAME} main.go
