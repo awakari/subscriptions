@@ -35,8 +35,8 @@ type cacheValueBytes struct {
 	Bytes []byte
 }
 
-const keyPrefix = "subscriptions:callbacks:"
-const keyPrefixPages = "subscriptions:callbackpages:"
+const keyPrefix = "subscription:"
+const keyPrefixPages = "subscriptions:"
 
 func NewCache(stor Storage, cache *cache.Cache, cacheTtl time.Duration, log *slog.Logger) Storage {
 	return storageCache{
