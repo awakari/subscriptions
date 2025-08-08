@@ -1,0 +1,26 @@
+# prod
+cert:
+  acme:
+    server: "https://acme-v02.api.letsencrypt.org/directory"
+  issuer:
+    name: letsencrypt
+db:
+  secret:
+    name: "db-mongo-external-0"
+  table:
+    shard: false
+  tls:
+    enabled: true
+    insecure: true
+
+ingressHttpV1:
+  corsAllowOrigin: "https://awakari.com"
+  hosts:
+    - host: subscriptions.awakari.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: secret-subscriptions-tls-server
+      hosts:
+        - subscriptions.awakari.com

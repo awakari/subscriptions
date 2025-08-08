@@ -1,0 +1,159 @@
+# Default values for subscriptions.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/awakari/subscriptions
+  pullPolicy: Always
+  tag: "latest"
+
+imagePullSecrets:
+  - name: github-registry
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 50051
+  http:
+    port: 8080
+  metrics:
+    port: 9090
+
+ingress:
+  enabled: false
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+  hosts:
+    - host: subscriptions.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+ingressHttpV1:
+  enabled: true
+  # limits are per source IP address
+  limit:
+    connections: 1000
+    rate:
+      second: 100
+      minute: 1000
+
+resources:
+  requests:
+    cpu: 1m
+    memory: 16Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationValue: 500m
+  targetMemoryUtilizationValue: 56Mi
+  targetWorkQueueLength: 100
+
+priority:
+  class: "awk-critical"
+
+nodeSelector: {}
+
+tolerations: []
+
+api:
+  auth:
+    uri: "auth:50051"
+  events:
+    uri: "events-backend.backend.svc.cluster.local:50066"
+    conn:
+      count:
+        init: 1
+        max: 10
+      idleTimeout: "15m"
+    followersChanged:
+      source: "https://awakari.com/subscriptions"
+      limit: "1000"
+      topic: "followers-changed"
+  queue:
+    uri: "queue-backend.backend.svc.cluster.local:50065"
+    conn:
+      count:
+        init: 1
+        max: 5
+      idleTimeout: "15m"
+    backoff:
+      error: "1s"
+    interestDeleted:
+      batchSize: 10
+      name: "subscriptions"
+      subj: "interests-deleted"
+  usage:
+    uri: "usage:50051"
+    conn:
+      count:
+        init: 1
+        max: 2
+      idleTimeout: "15m"
+cert:
+  acme:
+    email: "awakari@awakari.com"
+    server: "https://acme-staging-v02.api.letsencrypt.org/directory"
+  issuer:
+    name: letsencrypt-staging
+# Database related configuration.
+db:
+  cache:
+    local:
+      size: 1024
+    ttl: "1h"
+    addr: "cache-keydb:6379"
+    password: ""
+  # Database name to use.
+  name: subscriptions
+  secret:
+    name: "db-mongo"
+    keys:
+      url: "url"
+      username: "username"
+      password: "password"
+  table:
+    # Database table name to use.
+    name: callbacks
+    shard: true
+  tls:
+    enabled: false
+    insecure: false
+log:
+  # https://pkg.go.dev/golang.org/x/exp/slog#Level
+  level: -4

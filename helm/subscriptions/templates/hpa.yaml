@@ -1,0 +1,54 @@
+{{- if .Values.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "subscriptions.fullname" . }}
+  labels:
+    {{- include "subscriptions.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "subscriptions.fullname" . }}
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 15
+      policies:
+        - periodSeconds: 60
+          type: Pods
+          value: 1
+    scaleDown:
+      stabilizationWindowSeconds: 60
+  metrics:
+    - type: Object
+      object:
+        describedObject:
+          kind: Service
+          name: {{ include "subscriptions.fullname" . }}
+        metric:
+          name: "awk_work_queue_length"
+          selector:
+            matchLabels:
+              name: {{ .Values.api.queue.main.name }}
+        target:
+          type: Value
+          value: "{{ .Values.autoscaling.targetWorkQueueLength }}"
+    {{- if .Values.autoscaling.targetCPUUtilizationValue }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: AverageValue
+          averageValue: {{ .Values.autoscaling.targetCPUUtilizationValue }}
+    {{- end }}
+    {{- if .Values.autoscaling.targetMemoryUtilizationValue }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: AverageValue
+          averageValue: {{ .Values.autoscaling.targetMemoryUtilizationValue }}
+    {{- end }}
+{{- end }}

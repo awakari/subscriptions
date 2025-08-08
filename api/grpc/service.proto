@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package awakari.subscriptions;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./api/grpc";
+
+service Service {
+  rpc Update(UpdateRequest) returns (UpdateResponse);
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+  rpc Count(CountRequest) returns (CountResponse);
+  rpc DeleteExtra(DeleteExtraRequest) returns (DeleteExtraResponse);
+  rpc ChangeOwner(ChangeOwnerRequest) returns (ChangeOwnerResponse);
+}
+
+message UpdateRequest {
+
+  // query fields
+  string interestId = 1;
+  string groupId = 2;
+  string userId = 3;
+  string url = 4;
+
+  // set fields
+  google.protobuf.Timestamp lastResultAt = 5;
+}
+
+message UpdateResponse {
+}
+
+message DeleteRequest {
+  string interestId = 1;
+  string groupId = 2;
+  string userId = 3;
+  string url = 4;
+}
+
+message DeleteResponse {
+}
+
+// Count
+
+message CountRequest {
+  Filter filter = 1;
+  uint32 limit = 2;
+}
+
+message CountResponse {
+  int64 count = 1;
+}
+
+message Filter {
+  string id = 1;
+  string groupId = 2;
+  string userId = 3;
+}
+
+// DeleteExtra
+
+message DeleteExtraRequest {
+  Filter filter = 1;
+  uint32 limit = 2;
+}
+
+message DeleteExtraResponse {
+  int64 countLeft = 1;
+  int64 countDeleted = 2;
+}
+
+// ChangeOwner
+
+message ChangeOwnerRequest {
+  string oldGroupId = 1;
+  string oldUserId = 2;
+  string newGroupId = 3;
+  string newUserId = 4;
+}
+
+message ChangeOwnerResponse {
+  int64 n = 1;
+}

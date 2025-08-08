@@ -1,0 +1,177 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "subscriptions.fullname" . }}
+  labels:
+    {{- include "subscriptions.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "subscriptions.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "subscriptions.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "subscriptions.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      priorityClassName: "{{ .Values.priority.class }}"
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+            - name: API_PORT
+              value: "{{ .Values.service.port }}"
+            - name: API_HTTP_ENABLED
+              value: "{{ .Values.ingressHttpV1.enabled}}"
+
+            {{- if .Values.ingressHttpV1.enabled }}
+            - name: API_HTTP_PORT
+              value: "{{ .Values.service.http.port }}"
+            {{- range .Values.ingressHttpV1.hosts }}
+            - name: API_HTTP_HOST
+              value: "https://{{ .host }}"
+            - name: API_HTTP_USER_AGENT
+              value: "{{ .host }}"
+            {{- end }}
+            - name: API_AUTH_URI
+              value: "{{ .Values.api.auth.uri }}"
+            {{- end}}
+
+            - name: API_METRICS_PORT
+              value: "{{ .Values.service.metrics.port }}"
+
+            - name: LOG_LEVEL
+              value: "{{ .Values.log.level }}"
+
+            - name: DB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.db.secret.name }}"
+                  key: "{{ .Values.db.secret.keys.url }}"
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.db.secret.name }}"
+                  key: "{{ .Values.db.secret.keys.username }}"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.db.secret.name }}"
+                  key: "{{ .Values.db.secret.keys.password }}"
+            - name: DB_NAME
+              value: {{ .Values.db.name }}
+            - name: DB_TABLE_NAME
+              value: {{ .Values.db.table.name }}
+            - name: DB_TABLE_SHARD
+              value: "{{ .Values.db.table.shard }}"
+            - name: DB_TLS_ENABLED
+              value: "{{ .Values.db.tls.enabled }}"
+            - name: DB_TLS_INSECURE
+              value: "{{ .Values.db.tls.insecure }}"
+            - name: DB_CACHE_LOCAL_SIZE
+              value: "{{ .Values.db.cache.local.size }}"
+            - name: DB_CACHE_TTL
+              value: "{{ .Values.db.cache.ttl }}"
+            - name: DB_CACHE_ADDR
+              value: "{{ .Values.db.cache.addr }}"
+            - name: DB_CACHE_PASSWORD
+              value: "{{ .Values.db.cache.password }}"
+
+            - name: API_QUEUE_BACKOFF_ERROR
+              value: "{{ .Values.api.queue.backoff.error }}"
+            - name: API_QUEUE_URI
+              value: "{{ .Values.api.queue.uri }}"
+            - name: API_QUEUE_CONN_COUNT_INIT
+              value: "{{ .Values.api.queue.conn.count.init }}"
+            - name: API_QUEUE_CONN_COUNT_MAX
+              value: "{{ .Values.api.queue.conn.count.max }}"
+            - name: API_QUEUE_CONN_IDLE_TIMEOUT
+              value: "{{ .Values.api.queue.conn.idleTimeout }}"
+            - name: API_QUEUE_INTEREST_DELETED_BATCH_SIZE
+              value: "{{ .Values.api.queue.interestDeleted.batchSize }}"
+            - name: API_QUEUE_INTEREST_DELETED_NAME
+              value: "{{ .Values.api.queue.interestDeleted.name }}"
+            - name: API_QUEUE_INTEREST_DELETED_SUBJ
+              value: "{{ .Values.api.queue.interestDeleted.subj }}"
+
+            - name: API_EVENTS_URI
+              value: "{{ .Values.api.events.uri }}"
+            - name: API_EVENTS_CONN_COUNT_INIT
+              value: "{{ .Values.api.events.conn.count.init }}"
+            - name: API_EVENTS_CONN_COUNT_MAX
+              value: "{{ .Values.api.events.conn.count.max }}"
+            - name: API_EVENTS_CONN_IDLE_TIMEOUT
+              value: "{{ .Values.api.events.conn.idleTimeout }}"
+            - name: API_EVENTS_FOLLOWERS_CHANGED_SOURCE
+              value: "{{ .Values.api.events.followersChanged.source }}"
+            - name: API_EVENTS_FOLLOWERS_CHANGED_TOPIC
+              value: "{{ .Values.api.events.followersChanged.topic }}"
+            - name: API_EVENTS_FOLLOWERS_CHANGED_LIMIT
+              value: "{{ .Values.api.events.followersChanged.limit }}"
+
+            {{- if .Values.ingressHttpV1.enabled }}
+            - name: API_USAGE_URI
+              value: "{{ .Values.api.usage.uri }}"
+            - name: API_USAGE_CONN_COUNT_INIT
+              value: "{{ .Values.api.usage.conn.count.init }}"
+            - name: API_USAGE_CONN_COUNT_MAX
+              value: "{{ .Values.api.usage.conn.count.max }}"
+            - name: API_USAGE_CONN_IDLE_TIMEOUT
+              value: "{{ .Values.api.usage.conn.idleTimeout }}"
+            {{- end}}
+
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+            {{- if .Values.ingressHttpV1.enabled }}
+            - name: http
+              containerPort: {{ .Values.service.http.port }}
+              protocol: TCP
+            {{- end }}
+            - name: metrics
+              containerPort: {{ .Values.service.metrics.port }}
+              protocol: TCP
+          livenessProbe:
+            grpc:
+              port: {{ .Values.service.port }}
+          readinessProbe:
+            grpc:
+              port: {{ .Values.service.port }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "subscriptions.name" . }}
