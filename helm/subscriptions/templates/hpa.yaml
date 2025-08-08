@@ -22,19 +22,6 @@ spec:
     scaleDown:
       stabilizationWindowSeconds: 60
   metrics:
-    - type: Object
-      object:
-        describedObject:
-          kind: Service
-          name: {{ include "subscriptions.fullname" . }}
-        metric:
-          name: "awk_work_queue_length"
-          selector:
-            matchLabels:
-              name: {{ .Values.api.queue.main.name }}
-        target:
-          type: Value
-          value: "{{ .Values.autoscaling.targetWorkQueueLength }}"
     {{- if .Values.autoscaling.targetCPUUtilizationValue }}
     - type: Resource
       resource:
