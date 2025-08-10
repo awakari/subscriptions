@@ -60,7 +60,7 @@ func TestStorageMongo_Create(t *testing.T) {
 	defer clear(ctx, t, s.(storageMongo))
 	//
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub0",
+		InterestId: "interest0",
 		GroupId:    "group0",
 		UserId:     "user0",
 		Url:        "url0",
@@ -73,7 +73,7 @@ func TestStorageMongo_Create(t *testing.T) {
 	}{
 		"ok": {
 			src: model.Subscription{
-				InterestId:  "sub0",
+				InterestId:  "interest0",
 				GroupId:     "group0",
 				UserId:      "user0",
 				Url:         "url1",
@@ -84,7 +84,7 @@ func TestStorageMongo_Create(t *testing.T) {
 		},
 		"conflict": {
 			src: model.Subscription{
-				InterestId:  "sub0",
+				InterestId:  "interest0",
 				Url:         "url0",
 				Secret:      []byte("secret1"),
 				Format:      model.FormatCeJs,
@@ -121,7 +121,7 @@ func TestStorageMongo_Read(t *testing.T) {
 	defer clear(ctx, t, s.(storageMongo))
 	//
 	err = s.Create(ctx, model.Subscription{
-		InterestId:  "sub0",
+		InterestId:  "interest0",
 		Url:         "url0",
 		GroupId:     "group0",
 		UserId:      "user0",
@@ -131,7 +131,7 @@ func TestStorageMongo_Read(t *testing.T) {
 	})
 	require.Nil(t, err)
 	err = s.Update(ctx, model.Subscription{
-		InterestId:   "sub0",
+		InterestId:   "interest0",
 		Url:          "url0",
 		GroupId:      "group0",
 		UserId:       "user0",
@@ -143,18 +143,18 @@ func TestStorageMongo_Read(t *testing.T) {
 	require.Nil(t, err)
 	//
 	cases := map[string]struct {
-		subId   string
-		groupId string
-		userId  string
-		url     string
-		out     model.Subscription
-		err     error
+		interestId string
+		groupId    string
+		userId     string
+		url        string
+		out        model.Subscription
+		err        error
 	}{
 		"ok": {
-			subId:   "sub0",
-			url:     "url0",
-			groupId: "group0",
-			userId:  "user0",
+			interestId: "interest0",
+			url:        "url0",
+			groupId:    "group0",
+			userId:     "user0",
 			out: model.Subscription{
 				GroupId:      "group0",
 				UserId:       "user0",
@@ -166,16 +166,16 @@ func TestStorageMongo_Read(t *testing.T) {
 			},
 		},
 		"not found": {
-			subId: "sub0",
-			url:   "url1",
-			err:   ErrNotFound,
+			interestId: "interest0",
+			url:        "url1",
+			err:        ErrNotFound,
 		},
 	}
 	//
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
 			var out model.Subscription
-			out, err = s.Read(ctx, c.subId, c.groupId, c.userId, c.url)
+			out, err = s.Read(ctx, c.interestId, c.groupId, c.userId, c.url)
 			assert.Equal(t, c.out, out)
 			assert.ErrorIs(t, err, c.err)
 		})
@@ -201,7 +201,7 @@ func TestStorageMongo_Update(t *testing.T) {
 	defer clear(ctx, t, s.(storageMongo))
 	//
 	err = s.Create(ctx, model.Subscription{
-		InterestId:  "sub0",
+		InterestId:  "interest0",
 		GroupId:     "group0",
 		UserId:      "user0",
 		Url:         "url0",
@@ -216,7 +216,7 @@ func TestStorageMongo_Update(t *testing.T) {
 	}{
 		"missing": {
 			src: model.Subscription{
-				InterestId:   "sub0",
+				InterestId:   "interest0",
 				GroupId:      "group0",
 				UserId:       "user0",
 				Url:          "url1",
@@ -229,7 +229,7 @@ func TestStorageMongo_Update(t *testing.T) {
 		},
 		"ok": {
 			src: model.Subscription{
-				InterestId:   "sub0",
+				InterestId:   "interest0",
 				GroupId:      "group0",
 				UserId:       "user0",
 				Url:          "url0",
@@ -241,7 +241,7 @@ func TestStorageMongo_Update(t *testing.T) {
 		},
 		"invalid user id": {
 			src: model.Subscription{
-				InterestId:   "sub0",
+				InterestId:   "interest0",
 				GroupId:      "group0",
 				UserId:       "user1",
 				Url:          "url0",
@@ -281,21 +281,21 @@ func TestStorageMongo_CountByInterest(t *testing.T) {
 	defer clear(ctx, t, s.(storageMongo))
 	//
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub1",
+		InterestId: "interest1",
 		Url:        "url0",
 		Secret:     []byte{1, 2, 3},
 		Format:     model.FormatCeJs,
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub2",
+		InterestId: "interest2",
 		Url:        "url1",
 		Secret:     []byte{1, 2, 3},
 		Format:     model.FormatCeJs,
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub2",
+		InterestId: "interest2",
 		Url:        "url2",
 		Secret:     []byte{1, 2, 3},
 		Format:     model.FormatCeJs,
@@ -303,24 +303,24 @@ func TestStorageMongo_CountByInterest(t *testing.T) {
 	require.Nil(t, err)
 	//
 	cases := map[string]struct {
-		subId string
-		count int64
-		err   error
+		interestId string
+		count      int64
+		err        error
 	}{
 		"0": {},
 		"1": {
-			subId: "sub1",
-			count: 1,
+			interestId: "interest1",
+			count:      1,
 		},
 		"2": {
-			subId: "sub2",
-			count: 2,
+			interestId: "interest2",
+			count:      2,
 		},
 	}
 	//
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			count, err := s.CountByInterest(ctx, c.subId)
+			count, err := s.CountByInterest(ctx, c.interestId)
 			assert.Equal(t, c.count, count)
 			assert.ErrorIs(t, err, c.err)
 		})
@@ -346,33 +346,33 @@ func TestStorageMongo_Delete(t *testing.T) {
 	defer clear(ctx, t, s.(storageMongo))
 	//
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub0",
+		InterestId: "interest0",
 		Url:        "url0",
 		Secret:     []byte{1, 2, 3},
 	})
 	require.Nil(t, err)
 	//
 	cases := map[string]struct {
-		subId   string
-		groupId string
-		userId  string
-		url     string
-		err     error
+		interestId string
+		groupId    string
+		userId     string
+		url        string
+		err        error
 	}{
 		"ok": {
-			subId: "sub0",
-			url:   "url0",
+			interestId: "interest0",
+			url:        "url0",
 		},
 		"not found": {
-			subId: "sub1",
-			url:   "url0",
-			err:   ErrNotFound,
+			interestId: "interest1",
+			url:        "url0",
+			err:        ErrNotFound,
 		},
 	}
 	//
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			err = s.Delete(ctx, c.subId, c.groupId, c.userId, c.url)
+			err = s.Delete(ctx, c.interestId, c.groupId, c.userId, c.url)
 			assert.ErrorIs(t, err, c.err)
 		})
 	}
@@ -397,7 +397,7 @@ func TestStorageMongo_ListByInterest(t *testing.T) {
 	defer clear(ctx, t, s.(storageMongo))
 	//
 	err = s.Create(ctx, model.Subscription{
-		InterestId:  "sub0",
+		InterestId:  "interest0",
 		Url:         "url0",
 		GroupId:     "group0",
 		UserId:      "user0",
@@ -407,7 +407,7 @@ func TestStorageMongo_ListByInterest(t *testing.T) {
 	})
 	require.Nil(t, err)
 	err = s.Update(ctx, model.Subscription{
-		InterestId:   "sub0",
+		InterestId:   "interest0",
 		Url:          "url0",
 		GroupId:      "group0",
 		UserId:       "user0",
@@ -418,7 +418,7 @@ func TestStorageMongo_ListByInterest(t *testing.T) {
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
-		InterestId:  "sub0",
+		InterestId:  "interest0",
 		Url:         "url1",
 		Secret:      []byte{1, 2, 3},
 		Format:      model.FormatCeJs,
@@ -426,7 +426,7 @@ func TestStorageMongo_ListByInterest(t *testing.T) {
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub0",
+		InterestId: "interest0",
 		Url:        "url2",
 		Secret:     []byte{1, 2, 3},
 		Format:     model.FormatCeJs,
@@ -434,15 +434,15 @@ func TestStorageMongo_ListByInterest(t *testing.T) {
 	require.Nil(t, err)
 	//
 	cases := map[string]struct {
-		subId  string
-		cursor string
-		limit  uint32
-		out    []model.Subscription
-		err    error
+		interestId string
+		cursor     string
+		limit      uint32
+		out        []model.Subscription
+		err        error
 	}{
 		"w/ limit": {
-			subId: "sub0",
-			limit: 2,
+			interestId: "interest0",
+			limit:      2,
 			out: []model.Subscription{
 				{
 					GroupId:      "group0",
@@ -462,8 +462,8 @@ func TestStorageMongo_ListByInterest(t *testing.T) {
 			},
 		},
 		"w/ cursor": {
-			subId:  "sub0",
-			cursor: "url1",
+			interestId: "interest0",
+			cursor:     "url1",
 			out: []model.Subscription{
 				{
 					Url:    "url2",
@@ -477,7 +477,7 @@ func TestStorageMongo_ListByInterest(t *testing.T) {
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
 			var out []model.Subscription
-			out, err = s.ListByInterest(ctx, c.limit, c.subId, c.cursor)
+			out, err = s.ListByInterest(ctx, c.limit, c.interestId, c.cursor)
 			assert.Equal(t, c.out, out)
 			assert.ErrorIs(t, err, c.err)
 		})
@@ -503,21 +503,21 @@ func TestStorageMongo_ListByUrl(t *testing.T) {
 	defer clear(ctx, t, s.(storageMongo))
 	//
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub0",
+		InterestId: "interest0",
 		Url:        "url0",
 		Secret:     []byte{1, 2, 3},
 		Format:     model.FormatCeJs,
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub1",
+		InterestId: "interest1",
 		Url:        "url0",
 		Secret:     []byte{1, 2, 3},
 		Format:     model.FormatCeJs,
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub2",
+		InterestId: "interest2",
 		Url:        "url0",
 		Secret:     []byte{1, 2, 3},
 		Format:     model.FormatCeJs,
@@ -535,15 +535,15 @@ func TestStorageMongo_ListByUrl(t *testing.T) {
 			url:   "url0",
 			limit: 2,
 			out: []string{
-				"sub0",
-				"sub1",
+				"interest0",
+				"interest1",
 			},
 		},
 		"w/ cursor": {
 			url:    "url0",
-			cursor: "sub1",
+			cursor: "interest1",
 			out: []string{
-				"sub2",
+				"interest2",
 			},
 		},
 	}
@@ -577,7 +577,7 @@ func TestStorageMongo_ListByUser(t *testing.T) {
 	defer clear(ctx, t, s.(storageMongo))
 	//
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub0",
+		InterestId: "interest0",
 		GroupId:    "group0",
 		UserId:     "user0",
 		Url:        "url0",
@@ -586,7 +586,7 @@ func TestStorageMongo_ListByUser(t *testing.T) {
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub1",
+		InterestId: "interest1",
 		GroupId:    "group0",
 		UserId:     "user0",
 		Url:        "url0",
@@ -595,7 +595,7 @@ func TestStorageMongo_ListByUser(t *testing.T) {
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub2",
+		InterestId: "interest2",
 		GroupId:    "group0",
 		UserId:     "user1",
 		Url:        "url0",
@@ -620,7 +620,7 @@ func TestStorageMongo_ListByUser(t *testing.T) {
 			userId:  "user0",
 			out: []model.Subscription{
 				{
-					InterestId: "sub0",
+					InterestId: "interest0",
 					Url:        "url0",
 					Secret:     []byte{1, 2, 3},
 					Format:     model.FormatCeJs,
@@ -633,13 +633,13 @@ func TestStorageMongo_ListByUser(t *testing.T) {
 			userId:  "user0",
 			out: []model.Subscription{
 				{
-					InterestId: "sub0",
+					InterestId: "interest0",
 					Url:        "url0",
 					Secret:     []byte{1, 2, 3},
 					Format:     model.FormatCeJs,
 				},
 				{
-					InterestId: "sub1",
+					InterestId: "interest1",
 					Url:        "url0",
 					Secret:     []byte{1, 2, 3},
 					Format:     model.FormatCeJs,
@@ -675,21 +675,21 @@ func TestStorageMongo_ChangeOwner(t *testing.T) {
 	defer clear(ctx, t, s.(storageMongo))
 	//
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub0",
+		InterestId: "interest0",
 		GroupId:    "group0",
 		UserId:     "user0",
 		Url:        "url0",
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub1",
+		InterestId: "interest1",
 		GroupId:    "group0",
 		UserId:     "user1",
 		Url:        "url0",
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub2",
+		InterestId: "interest2",
 		GroupId:    "group0",
 		UserId:     "user1",
 		Url:        "url0",
@@ -751,7 +751,7 @@ func TestStorageMongo_ListAll(t *testing.T) {
 	defer clear(ctx, t, s.(storageMongo))
 	//
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub0",
+		InterestId: "interest0",
 		GroupId:    "group0",
 		UserId:     "user0",
 		Url:        "url0",
@@ -760,7 +760,7 @@ func TestStorageMongo_ListAll(t *testing.T) {
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub1",
+		InterestId: "interest1",
 		GroupId:    "group0",
 		UserId:     "user0",
 		Url:        "url1",
@@ -769,7 +769,7 @@ func TestStorageMongo_ListAll(t *testing.T) {
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
-		InterestId: "sub2",
+		InterestId: "interest2",
 		GroupId:    "group0",
 		UserId:     "user1",
 		Url:        "url0",

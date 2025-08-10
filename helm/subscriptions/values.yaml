@@ -140,7 +140,7 @@ db:
     addr: "cache-keydb:6379"
     password: ""
   # Database name to use.
-  name: reader
+  name: subscriptions
   secret:
     name: "db-mongo"
     keys:
@@ -149,7 +149,7 @@ db:
       password: "password"
   table:
     # Database table name to use.
-    name: callbacks
+    name: subscriptions
     shard: true
   tls:
     enabled: false

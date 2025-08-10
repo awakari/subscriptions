@@ -186,11 +186,11 @@ func (c storageCache) Delete(ctx context.Context, interestId, groupId, userId, u
 	return
 }
 
-func (c storageCache) ListByInterest(ctx context.Context, limit uint32, subId, cursor string) (page []model.Subscription, err error) {
-	k := keyPages(subId, cursor)
+func (c storageCache) ListByInterest(ctx context.Context, limit uint32, interestId, cursor string) (page []model.Subscription, err error) {
+	k := keyPages(interestId, cursor)
 	v := new(cacheValueBytes)
 	load := func(_ *cache.Item) (result any, err error) {
-		vLoad, errLoad := c.stor.ListByInterest(ctx, limit, subId, cursor)
+		vLoad, errLoad := c.stor.ListByInterest(ctx, limit, interestId, cursor)
 		if errLoad == nil {
 			cvp := cacheValuePage{}
 			for _, vItem := range vLoad {
@@ -239,7 +239,7 @@ func (c storageCache) ListByInterest(ctx context.Context, limit uint32, subId, c
 		}
 	default:
 		c.log.Debug(fmt.Sprintf("cache failure: get key %s: %s", k, err))
-		page, err = c.stor.ListByInterest(ctx, limit, subId, cursor) // fallback
+		page, err = c.stor.ListByInterest(ctx, limit, interestId, cursor) // fallback
 	}
 	return
 }
@@ -269,10 +269,10 @@ func (c storageCache) ChangeOwner(ctx context.Context, oldGroupId, oldUserId, ne
 	return
 }
 
-func (c storageCache) invalidatePages(ctx context.Context, subId string) (err error) {
+func (c storageCache) invalidatePages(ctx context.Context, interestId string) (err error) {
 	var cursor string
 	for {
-		k := keyPages(subId, cursor)
+		k := keyPages(interestId, cursor)
 		v := new(cacheValueBytes)
 		err = c.cache.Get(ctx, k, v)
 		var cvp cacheValuePage

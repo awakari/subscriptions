@@ -21,7 +21,7 @@ type storageMongo struct {
 }
 
 type recSub struct {
-	InterestId   string        `bson:"subId"`
+	InterestId   string        `bson:"interestId"`
 	GroupId      string        `bson:"groupId"`
 	UserId       string        `bson:"userId"`
 	Url          string        `bson:"url"`
@@ -33,7 +33,7 @@ type recSub struct {
 }
 
 const attrId = "_id"
-const attrInterestId = "subId"
+const attrInterestId = "interestId"
 const attrGroupId = "groupId"
 const attrUserId = "userId"
 const attrUrl = "url"
