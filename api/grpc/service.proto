@@ -30,7 +30,6 @@ message Subscription {
   bytes secret = 5;
   google.protobuf.Timestamp lastResultAt = 6;
   google.protobuf.Duration intervalMin = 7;
-  uint32 errorCount = 8;
 }
 
 message UpdateRequest {
@@ -43,7 +42,7 @@ message UpdateRequest {
 
   // set fields
   google.protobuf.Timestamp lastResultAt = 5;
-  uint32 errorCount = 8;
+  uint32 errorCount = 6;
 }
 
 message UpdateResponse {
