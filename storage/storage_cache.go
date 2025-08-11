@@ -25,6 +25,7 @@ type cacheValue struct {
 	Format       model.Format  `json:"format"`
 	IntervalMin  time.Duration `json:"interval,omitempty"`
 	LastResultAt time.Time     `json:"last,omitempty"`
+	ErrorCount   uint32        `json:"error_count,omitempty"`
 }
 
 type cacheValuePage struct {
@@ -101,6 +102,7 @@ func (c storageCache) Update(ctx context.Context, sub model.Subscription) (err e
 			Format:       sub.Format,
 			IntervalMin:  sub.IntervalMin,
 			LastResultAt: sub.LastResultAt,
+			ErrorCount:   sub.ErrorCount,
 		})
 		k := key(sub.InterestId, sub.Url)
 		if err == nil {
@@ -135,6 +137,7 @@ func (c storageCache) Read(ctx context.Context, interestId, groupId, userId, url
 				Format:       subLoad.Format,
 				IntervalMin:  subLoad.IntervalMin,
 				LastResultAt: subLoad.LastResultAt,
+				ErrorCount:   subLoad.ErrorCount,
 			})
 			result = cv
 		}
@@ -202,6 +205,7 @@ func (c storageCache) ListByInterest(ctx context.Context, limit uint32, interest
 					Format:       vItem.Format,
 					IntervalMin:  vItem.IntervalMin,
 					LastResultAt: vItem.LastResultAt,
+					ErrorCount:   vItem.ErrorCount,
 				})
 			}
 			cv := &cacheValueBytes{}

@@ -455,6 +455,7 @@ func TestStorageMongo_ListByInterest(t *testing.T) {
 		Format:       model.FormatCeJs,
 		IntervalMin:  1 * time.Minute,
 		LastResultAt: time.Date(2025, 2, 28, 10, 59, 35, 0, time.UTC),
+		ErrorCount:   42,
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
@@ -492,6 +493,7 @@ func TestStorageMongo_ListByInterest(t *testing.T) {
 					Format:       model.FormatCeJs,
 					IntervalMin:  1 * time.Minute,
 					LastResultAt: time.Date(2025, 2, 28, 10, 59, 35, 0, time.UTC),
+					ErrorCount:   42,
 				},
 				{
 					Url:         "url1",
