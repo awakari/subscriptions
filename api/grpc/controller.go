@@ -25,14 +25,14 @@ func NewController(svc service.Service) ServiceServer {
 
 func (c controller) Update(ctx context.Context, req *UpdateRequest) (resp *UpdateResponse, err error) {
 	resp = &UpdateResponse{}
-	err = c.svc.Update(ctx, model.Subscription{
+	sub := model.Subscription{
 		InterestId:   req.InterestId,
 		Url:          req.Url,
 		GroupId:      req.GroupId,
 		UserId:       req.UserId,
 		LastResultAt: req.LastResultAt.AsTime(),
-		ErrorCount:   req.ErrorCount,
-	})
+	}
+	err = c.svc.Update(ctx, sub, req.DeliveryFailure)
 	err = encodeError(err)
 	return
 }

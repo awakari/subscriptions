@@ -22,7 +22,7 @@ type Service interface {
 	Subscription(ctx context.Context, interestId, groupId, userId, url string) (sub model.Subscription, err error)
 	Unsubscribe(ctx context.Context, interestId, groupId, userId, url string) (err error)
 	UnsubscribeByInterest(ctx context.Context, interestId string) (count int64, err error)
-	Update(ctx context.Context, sub model.Subscription) (err error)
+	Update(ctx context.Context, sub model.Subscription, deliveryFailed bool) (err error)
 	ListByInterest(ctx context.Context, limit uint32, interestId, cursor string) (page []model.Subscription, err error)
 	ListByUrl(ctx context.Context, limit uint32, url, cursor string) (page []string, err error)
 	ListByUser(ctx context.Context, limit uint32, groupId, userId string) (page []model.Subscription, err error)
@@ -138,8 +138,8 @@ func (svc service) UnsubscribeByInterest(ctx context.Context, interestId string)
 	return
 }
 
-func (svc service) Update(ctx context.Context, sub model.Subscription) (err error) {
-	err = svc.stor.Update(ctx, sub)
+func (svc service) Update(ctx context.Context, sub model.Subscription, deliveryFailed bool) (err error) {
+	err = svc.stor.Update(ctx, sub, deliveryFailed)
 	switch {
 	case errors.Is(err, storage.ErrNotFound):
 		err = fmt.Errorf("%w: %s, %s", ErrNotFound, sub.InterestId, sub.Url)

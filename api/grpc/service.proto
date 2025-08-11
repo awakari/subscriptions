@@ -43,7 +43,7 @@ message UpdateRequest {
 
   // set fields
   google.protobuf.Timestamp lastResultAt = 5;
-  uint32 errorCount = 6;
+  bool deliveryFailure = 7;
 }
 
 message UpdateResponse {

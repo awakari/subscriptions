@@ -139,8 +139,18 @@ func TestStorageMongo_Read(t *testing.T) {
 		Format:       model.FormatCeJs,
 		IntervalMin:  1 * time.Minute,
 		LastResultAt: time.Date(2025, 2, 28, 10, 59, 35, 0, time.UTC),
-		ErrorCount:   42,
-	})
+	}, false)
+	require.Nil(t, err)
+	err = s.Update(ctx, model.Subscription{
+		InterestId:   "interest0",
+		Url:          "url0",
+		GroupId:      "group0",
+		UserId:       "user0",
+		Secret:       []byte{1, 2, 3},
+		Format:       model.FormatCeJs,
+		IntervalMin:  1 * time.Minute,
+		LastResultAt: time.Date(2025, 2, 28, 10, 59, 35, 0, time.UTC),
+	}, true)
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
 		InterestId:  "interest0",
@@ -176,7 +186,7 @@ func TestStorageMongo_Read(t *testing.T) {
 				Format:       model.FormatCeJs,
 				IntervalMin:  1 * time.Minute,
 				LastResultAt: time.Date(2025, 2, 28, 10, 59, 35, 0, time.UTC),
-				ErrorCount:   42,
+				ErrorCount:   1,
 			},
 		},
 		"not found": {
@@ -230,8 +240,9 @@ func TestStorageMongo_Update(t *testing.T) {
 	require.Nil(t, err)
 	//
 	cases := map[string]struct {
-		src model.Subscription
-		err error
+		src            model.Subscription
+		deliveryFailed bool
+		err            error
 	}{
 		"missing": {
 			src: model.Subscription{
@@ -256,8 +267,8 @@ func TestStorageMongo_Update(t *testing.T) {
 				Format:       model.FormatCeJs,
 				IntervalMin:  1 * time.Minute,
 				LastResultAt: time.Date(2025, 2, 28, 10, 59, 35, 0, time.UTC),
-				ErrorCount:   42,
 			},
+			deliveryFailed: true,
 		},
 		"invalid user id": {
 			src: model.Subscription{
@@ -276,7 +287,7 @@ func TestStorageMongo_Update(t *testing.T) {
 	//
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			err = s.Update(ctx, c.src)
+			err = s.Update(ctx, c.src, c.deliveryFailed)
 			assert.ErrorIs(t, err, c.err)
 		})
 	}
@@ -455,8 +466,17 @@ func TestStorageMongo_ListByInterest(t *testing.T) {
 		Format:       model.FormatCeJs,
 		IntervalMin:  1 * time.Minute,
 		LastResultAt: time.Date(2025, 2, 28, 10, 59, 35, 0, time.UTC),
-		ErrorCount:   42,
-	})
+	}, true)
+	require.Nil(t, err)
+	err = s.Update(ctx, model.Subscription{
+		InterestId:  "interest0",
+		Url:         "url0",
+		GroupId:     "group0",
+		UserId:      "user0",
+		Secret:      []byte{1, 2, 3},
+		Format:      model.FormatCeJs,
+		IntervalMin: 1 * time.Minute,
+	}, true)
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Subscription{
 		InterestId:  "interest0",
@@ -486,14 +506,13 @@ func TestStorageMongo_ListByInterest(t *testing.T) {
 			limit:      2,
 			out: []model.Subscription{
 				{
-					GroupId:      "group0",
-					UserId:       "user0",
-					Url:          "url0",
-					Secret:       []byte{1, 2, 3},
-					Format:       model.FormatCeJs,
-					IntervalMin:  1 * time.Minute,
-					LastResultAt: time.Date(2025, 2, 28, 10, 59, 35, 0, time.UTC),
-					ErrorCount:   42,
+					GroupId:     "group0",
+					UserId:      "user0",
+					Url:         "url0",
+					Secret:      []byte{1, 2, 3},
+					Format:      model.FormatCeJs,
+					IntervalMin: 1 * time.Minute,
+					ErrorCount:  2,
 				},
 				{
 					Url:         "url1",

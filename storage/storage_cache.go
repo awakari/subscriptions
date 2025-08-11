@@ -57,7 +57,7 @@ func (c storageCache) Create(ctx context.Context, sub model.Subscription) (err e
 	if err == nil {
 		err = c.invalidatePages(ctx, sub.InterestId)
 		if err != nil {
-			c.log.Warn(fmt.Sprintf("create: pages cache failure: invalidate by %s: %s", sub.InterestId, err))
+			c.log.Debug(fmt.Sprintf("create: pages cache failure: invalidate by %s: %s", sub.InterestId, err))
 		}
 		cv := new(cacheValueBytes)
 		cv.Bytes, err = sonic.Marshal(&cacheValue{
@@ -86,36 +86,17 @@ func (c storageCache) Create(ctx context.Context, sub model.Subscription) (err e
 	return
 }
 
-func (c storageCache) Update(ctx context.Context, sub model.Subscription) (err error) {
-	err = c.stor.Update(ctx, sub)
+func (c storageCache) Update(ctx context.Context, sub model.Subscription, deliveryFailed bool) (err error) {
+	err = c.stor.Update(ctx, sub, deliveryFailed)
 	if err == nil {
 		err = c.invalidatePages(ctx, sub.InterestId)
 		if err != nil {
-			c.log.Warn(fmt.Sprintf("update: pages cache failure: invalidate by %s: %s", sub.InterestId, err))
+			c.log.Debug(fmt.Sprintf("update: pages cache failure: invalidate by %s: %s", sub.InterestId, err))
 		}
-		cv := new(cacheValueBytes)
-		cv.Bytes, err = sonic.Marshal(&cacheValue{
-			GroupId:      sub.GroupId,
-			UserId:       sub.UserId,
-			Url:          sub.Url,
-			Secret:       sub.Secret,
-			Format:       sub.Format,
-			IntervalMin:  sub.IntervalMin,
-			LastResultAt: sub.LastResultAt,
-			ErrorCount:   sub.ErrorCount,
-		})
 		k := key(sub.InterestId, sub.Url)
-		if err == nil {
-			item := &cache.Item{
-				Ctx:   ctx,
-				Key:   k,
-				Value: cv,
-				TTL:   c.cacheTtl,
-			}
-			err = c.cache.Set(item)
-		}
+		err = c.cache.Delete(ctx, k)
 		if err != nil {
-			c.log.Debug(fmt.Sprintf("cache failure: put key %s: %s", k, err))
+			c.log.Debug(fmt.Sprintf("cache failure: delete key %s: %s", k, err))
 			err = nil
 		}
 	}

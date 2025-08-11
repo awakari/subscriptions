@@ -354,7 +354,7 @@ func (s storageMongo) Read(ctx context.Context, interestId, groupId, userId, url
 	return
 }
 
-func (s storageMongo) Update(ctx context.Context, sub model.Subscription) error {
+func (s storageMongo) Update(ctx context.Context, sub model.Subscription, deliveryFailed bool) error {
 	q := bson.M{
 		attrInterestId: sub.InterestId,
 		attrUrl:        sub.Url,
@@ -396,13 +396,19 @@ func (s storageMongo) Update(ctx context.Context, sub model.Subscription) error 
 			},
 		},
 	}
-	u := bson.M{
-		attrLast:       sub.LastResultAt,
-		attrErrorCount: sub.ErrorCount,
+	u := bson.M{}
+	switch deliveryFailed {
+	case true:
+		u["$inc"] = bson.M{
+			attrErrorCount: 1,
+		}
+	default:
+		u["$set"] = bson.M{
+			attrErrorCount: 0,
+			attrLast:       sub.LastResultAt,
+		}
 	}
-	result, err := s.coll.UpdateOne(ctx, q, bson.M{
-		"$set": u,
-	})
+	result, err := s.coll.UpdateOne(ctx, q, u)
 	if err != nil {
 		return decodeError(err, sub.InterestId, sub.Url)
 	}

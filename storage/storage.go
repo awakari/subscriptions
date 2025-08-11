@@ -11,7 +11,7 @@ type Storage interface {
 	io.Closer
 	Create(ctx context.Context, sub model.Subscription) (err error)
 	Read(ctx context.Context, interestId, groupId, userId, url string) (cb model.Subscription, err error)
-	Update(ctx context.Context, sub model.Subscription) (err error)
+	Update(ctx context.Context, sub model.Subscription, deliveryFailed bool) (err error)
 	Delete(ctx context.Context, interestId, groupId, userId, url string) (err error)
 
 	CountByInterest(ctx context.Context, interestId string) (count int64, err error)

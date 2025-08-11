@@ -48,10 +48,10 @@ func (sl logging) UnsubscribeByInterest(ctx context.Context, interestId string) 
 	return
 }
 
-func (sl logging) Update(ctx context.Context, sub model.Subscription) (err error) {
-	err = sl.svc.Update(ctx, sub)
+func (sl logging) Update(ctx context.Context, sub model.Subscription, deliveryFailed bool) (err error) {
+	err = sl.svc.Update(ctx, sub, deliveryFailed)
 	ll := util.LogLevel(err)
-	sl.log.Log(ctx, ll, fmt.Sprintf("service.Update(%+v): err=%s", sub, err))
+	sl.log.Log(ctx, ll, fmt.Sprintf("service.Update(%+v, deliveryFailed=%t): err=%s", sub, deliveryFailed, err))
 	return
 }
 

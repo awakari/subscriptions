@@ -21,7 +21,7 @@ func (s storageMock) Read(ctx context.Context, interestId, groupId, userId, url 
 	return
 }
 
-func (s storageMock) Update(ctx context.Context, sub model.Subscription) (err error) {
+func (s storageMock) Update(ctx context.Context, sub model.Subscription, deliveryFailed bool) (err error) {
 	//TODO implement me
 	panic("implement me")
 }
