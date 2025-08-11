@@ -21,6 +21,7 @@ type storageMongo struct {
 }
 
 type recSub struct {
+	Id           string        `bson:"_id,omitempty"`
 	InterestId   string        `bson:"interestId"`
 	GroupId      string        `bson:"groupId"`
 	UserId       string        `bson:"userId"`
@@ -29,7 +30,7 @@ type recSub struct {
 	Fmt          int           `bson:"fmt"`
 	IntervalMin  time.Duration `bson:"interval,omitempty"`
 	LastResultAt time.Time     `bson:"last,omitempty"`
-	Id           string        `bson:"_id,omitempty"`
+	ErrorCount   uint32        `bson:"errorCount,omitempty"`
 }
 
 const attrId = "_id"
@@ -41,6 +42,8 @@ const attrSecret = "secret"
 const attrFmt = "fmt"
 const attrInterval = "interval"
 const attrLast = "last"
+const attrErrorCount = "errorCount"
+const attrDeletedAt = "deletedAt"
 
 var optsSrvApi = options.ServerAPI(options.ServerAPIVersion1)
 var optsRead = options.
@@ -93,6 +96,10 @@ var projRead = bson.D{
 	},
 	{
 		Key:   attrLast,
+		Value: 1,
+	},
+	{
+		Key:   attrErrorCount,
 		Value: 1,
 	},
 }
@@ -156,11 +163,29 @@ var indices = []mongo.IndexModel{
 			Index().
 			SetUnique(true),
 	},
-	// to support the count by an interest id
 	{
 		Keys: bson.D{
 			{
 				Key:   attrInterestId,
+				Value: 1,
+			},
+			{
+				Key:   attrDeletedAt,
+				Value: 1,
+			},
+		},
+		Options: options.
+			Index().
+			SetUnique(false),
+	},
+	{
+		Keys: bson.D{
+			{
+				Key:   attrGroupId,
+				Value: 1,
+			},
+			{
+				Key:   attrUserId,
 				Value: 1,
 			},
 		},
@@ -194,7 +219,7 @@ func NewStorage(ctx context.Context, cfgDb config.DbConfig) (s Storage, err erro
 		stor.conn = conn
 		stor.db = db
 		stor.coll = coll
-		_, err = stor.ensureIndices(ctx)
+		_, err = stor.ensureIndices(ctx, cfgDb)
 	}
 	if err == nil && cfgDb.Table.Shard {
 		err = stor.shardCollection(ctx)
@@ -208,7 +233,21 @@ func NewStorage(ctx context.Context, cfgDb config.DbConfig) (s Storage, err erro
 	return
 }
 
-func (s storageMongo) ensureIndices(ctx context.Context) ([]string, error) {
+func (s storageMongo) ensureIndices(ctx context.Context, cfgDb config.DbConfig) ([]string, error) {
+	retentionSeconds := int32(cfgDb.Table.Retention.Seconds())
+	if retentionSeconds > 0 {
+		indices = append(indices, mongo.IndexModel{
+			Keys: bson.D{
+				{
+					Key:   attrDeletedAt,
+					Value: 1,
+				},
+			},
+			Options: options.
+				Index().
+				SetExpireAfterSeconds(retentionSeconds),
+		})
+	}
 	return s.coll.Indexes().CreateMany(ctx, indices)
 }
 
@@ -265,6 +304,11 @@ func (s storageMongo) Read(ctx context.Context, interestId, groupId, userId, url
 					{
 						attrUserId: userId,
 					},
+					{
+						attrDeletedAt: bson.M{
+							"$exists": false,
+						},
+					},
 				},
 			},
 			{
@@ -277,6 +321,11 @@ func (s storageMongo) Read(ctx context.Context, interestId, groupId, userId, url
 					},
 					{
 						attrUserId: bson.M{
+							"$exists": false,
+						},
+					},
+					{
+						attrDeletedAt: bson.M{
 							"$exists": false,
 						},
 					},
@@ -299,6 +348,7 @@ func (s storageMongo) Read(ctx context.Context, interestId, groupId, userId, url
 		sub.Format = model.Format(rec.Fmt)
 		sub.IntervalMin = rec.IntervalMin
 		sub.LastResultAt = rec.LastResultAt
+		sub.ErrorCount = rec.ErrorCount
 	}
 	err = decodeError(err, interestId, url)
 	return
@@ -317,6 +367,11 @@ func (s storageMongo) Update(ctx context.Context, sub model.Subscription) error 
 					{
 						attrUserId: sub.UserId,
 					},
+					{
+						attrDeletedAt: bson.M{
+							"$exists": false,
+						},
+					},
 				},
 			},
 			{
@@ -332,14 +387,19 @@ func (s storageMongo) Update(ctx context.Context, sub model.Subscription) error 
 							"$exists": false,
 						},
 					},
+					{
+						attrDeletedAt: bson.M{
+							"$exists": false,
+						},
+					},
 				},
 			},
 		},
 	}
 	u := bson.M{
-		attrLast: sub.LastResultAt,
+		attrLast:       sub.LastResultAt,
+		attrErrorCount: sub.ErrorCount,
 	}
-	var result *mongo.UpdateResult
 	result, err := s.coll.UpdateOne(ctx, q, bson.M{
 		"$set": u,
 	})
@@ -365,6 +425,11 @@ func (s storageMongo) Delete(ctx context.Context, interestId, groupId, userId, u
 					{
 						attrUserId: userId,
 					},
+					{
+						attrDeletedAt: bson.M{
+							"$exists": false,
+						},
+					},
 				},
 			},
 			{
@@ -380,19 +445,26 @@ func (s storageMongo) Delete(ctx context.Context, interestId, groupId, userId, u
 							"$exists": false,
 						},
 					},
+					{
+						attrDeletedAt: bson.M{
+							"$exists": false,
+						},
+					},
 				},
 			},
 		},
 	}
-	var result *mongo.DeleteResult
-	result, err = s.coll.DeleteOne(ctx, q)
-	switch err {
-	case nil:
-		if result.DeletedCount < 1 {
-			err = fmt.Errorf("%w: interestId=%s, url=%s", ErrNotFound, interestId, url)
-		}
-	default:
-		err = decodeError(err, interestId, url)
+	u := bson.M{
+		attrDeletedAt: time.Now().UTC(),
+	}
+	result, err := s.coll.UpdateOne(ctx, q, bson.M{
+		"$set": u,
+	})
+	if err != nil {
+		return decodeError(err, interestId, url)
+	}
+	if result.MatchedCount < 1 {
+		return fmt.Errorf("%w: %s, %s", ErrNotFound, interestId, url)
 	}
 	return
 }
@@ -400,6 +472,9 @@ func (s storageMongo) Delete(ctx context.Context, interestId, groupId, userId, u
 func (s storageMongo) CountByInterest(ctx context.Context, interestId string) (count int64, err error) {
 	count, err = s.coll.CountDocuments(ctx, bson.M{
 		attrInterestId: interestId,
+		attrDeletedAt: bson.M{
+			"$exists": false,
+		},
 	})
 	err = decodeError(err, interestId, "")
 	return
@@ -410,6 +485,9 @@ func (s storageMongo) ListByInterest(ctx context.Context, limit uint32, interest
 		attrInterestId: interestId,
 		attrUrl: bson.M{
 			"$gt": cursor,
+		},
+		attrDeletedAt: bson.M{
+			"$exists": false,
 		},
 	}
 	var cur *mongo.Cursor
@@ -443,6 +521,9 @@ func (s storageMongo) ListByUrl(ctx context.Context, limit uint32, url, cursor s
 		attrInterestId: bson.M{
 			"$gt": cursor,
 		},
+		attrDeletedAt: bson.M{
+			"$exists": false,
+		},
 	}
 	var cur *mongo.Cursor
 	cur, err = s.coll.Find(ctx, q, optsReadPageByUrl.SetLimit(int64(limit)))
@@ -463,6 +544,9 @@ func (s storageMongo) ListByUser(ctx context.Context, limit uint32, groupId, use
 	q := bson.M{
 		attrGroupId: groupId,
 		attrUserId:  userId,
+		attrDeletedAt: bson.M{
+			"$exists": false,
+		},
 	}
 	var cur *mongo.Cursor
 	cur, err = s.coll.Find(ctx, q, optsReadPage.SetLimit(int64(limit)))
@@ -507,6 +591,9 @@ func (s storageMongo) ListAll(ctx context.Context, limit uint32, cursor string) 
 		attrId: bson.M{
 			"$gt": cursorObjId,
 		},
+		attrDeletedAt: bson.M{
+			"$exists": false,
+		},
 	}
 	var cur *mongo.Cursor
 	cur, err = s.coll.Find(ctx, q, optsReadAllPage.SetLimit(int64(limit)))
@@ -533,6 +620,9 @@ func (s storageMongo) ChangeOwner(ctx context.Context, oldGroupId, oldUserId, ne
 	q := bson.M{
 		attrGroupId: oldGroupId,
 		attrUserId:  oldUserId,
+		attrDeletedAt: bson.M{
+			"$exists": false,
+		},
 	}
 	u := bson.M{
 		"$set": bson.M{

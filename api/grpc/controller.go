@@ -31,6 +31,7 @@ func (c controller) Update(ctx context.Context, req *UpdateRequest) (resp *Updat
 		GroupId:      req.GroupId,
 		UserId:       req.UserId,
 		LastResultAt: req.LastResultAt.AsTime(),
+		ErrorCount:   req.ErrorCount,
 	})
 	err = encodeError(err)
 	return

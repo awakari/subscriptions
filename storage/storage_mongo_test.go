@@ -139,7 +139,20 @@ func TestStorageMongo_Read(t *testing.T) {
 		Format:       model.FormatCeJs,
 		IntervalMin:  1 * time.Minute,
 		LastResultAt: time.Date(2025, 2, 28, 10, 59, 35, 0, time.UTC),
+		ErrorCount:   42,
 	})
+	require.Nil(t, err)
+	err = s.Create(ctx, model.Subscription{
+		InterestId:  "interest0",
+		Url:         "url1",
+		GroupId:     "group0",
+		UserId:      "user1",
+		Secret:      []byte{1, 2, 3},
+		Format:      model.FormatCeJs,
+		IntervalMin: 1 * time.Minute,
+	})
+	require.Nil(t, err)
+	err = s.Delete(ctx, "interest0", "group0", "user1", "url1")
 	require.Nil(t, err)
 	//
 	cases := map[string]struct {
@@ -163,9 +176,15 @@ func TestStorageMongo_Read(t *testing.T) {
 				Format:       model.FormatCeJs,
 				IntervalMin:  1 * time.Minute,
 				LastResultAt: time.Date(2025, 2, 28, 10, 59, 35, 0, time.UTC),
+				ErrorCount:   42,
 			},
 		},
 		"not found": {
+			interestId: "interest1",
+			url:        "url0",
+			err:        ErrNotFound,
+		},
+		"deleted": {
 			interestId: "interest0",
 			url:        "url1",
 			err:        ErrNotFound,
@@ -237,6 +256,7 @@ func TestStorageMongo_Update(t *testing.T) {
 				Format:       model.FormatCeJs,
 				IntervalMin:  1 * time.Minute,
 				LastResultAt: time.Date(2025, 2, 28, 10, 59, 35, 0, time.UTC),
+				ErrorCount:   42,
 			},
 		},
 		"invalid user id": {
@@ -287,6 +307,14 @@ func TestStorageMongo_CountByInterest(t *testing.T) {
 		Format:     model.FormatCeJs,
 	})
 	require.Nil(t, err)
+	err = s.Create(ctx, model.Subscription{
+		InterestId: "interest1",
+		Url:        "url1",
+		Secret:     []byte{1, 2, 3},
+		Format:     model.FormatCeJs,
+	})
+	require.Nil(t, err)
+	require.Nil(t, s.Delete(ctx, "interest1", "", "", "url1"))
 	err = s.Create(ctx, model.Subscription{
 		InterestId: "interest2",
 		Url:        "url1",
@@ -351,6 +379,13 @@ func TestStorageMongo_Delete(t *testing.T) {
 		Secret:     []byte{1, 2, 3},
 	})
 	require.Nil(t, err)
+	err = s.Create(ctx, model.Subscription{
+		InterestId: "interest1",
+		Url:        "url1",
+		Secret:     []byte{1, 2, 3},
+	})
+	require.Nil(t, err)
+	require.Nil(t, s.Delete(ctx, "interest1", "", "", "url1"))
 	//
 	cases := map[string]struct {
 		interestId string
@@ -366,6 +401,11 @@ func TestStorageMongo_Delete(t *testing.T) {
 		"not found": {
 			interestId: "interest1",
 			url:        "url0",
+			err:        ErrNotFound,
+		},
+		"deleted before": {
+			interestId: "interest1",
+			url:        "url1",
 			err:        ErrNotFound,
 		},
 	}

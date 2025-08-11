@@ -151,6 +151,7 @@ db:
     # Database table name to use.
     name: subscriptions
     shard: true
+    retention: "2160h"
   tls:
     enabled: false
     insecure: false

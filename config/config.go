@@ -59,8 +59,9 @@ type DbConfig struct {
 	UserName string `envconfig:"DB_USERNAME" default:""`
 	Password string `envconfig:"DB_PASSWORD" default:""`
 	Table    struct {
-		Name  string `envconfig:"DB_TABLE_NAME" default:"subscriptions" required:"true"`
-		Shard bool   `envconfig:"DB_TABLE_SHARD" default:"true"`
+		Name      string        `envconfig:"DB_TABLE_NAME" default:"subscriptions" required:"true"`
+		Retention time.Duration `envconfig:"DB_TABLE_RETENTION" default:"2160h" required:"true"`
+		Shard     bool          `envconfig:"DB_TABLE_SHARD" default:"true"`
 	}
 	Tls struct {
 		Enabled  bool `envconfig:"DB_TLS_ENABLED" default:"false" required:"true"`

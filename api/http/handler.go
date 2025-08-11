@@ -78,12 +78,12 @@ func (h handler) Update(ctx *gin.Context) {
 // @Tags Subscriptions
 // @Produce json
 // @Param interestId query string false "Interest ID"
-// @Param url query string false "Callback URL (BASE64 encoded)"
+// @Param url query string false "Subscription URL (BASE64 encoded)"
 // @Param limit query int false "Results page limit, used only when interest id is not specified."
 // @Param X-Awakari-Group-Id header string true "default"
 // @Param X-Awakari-User-Id header string true "foo"
 // @Param Authorization	header string true "Bearer XXX..."
-// @Success 200 {object} Callback
+// @Success 200 {object} Subscription
 // @Failure 400 {string} string "failed to decode the specified callback URL"
 // @Failure 401 {string} string "unauthorized"
 // @Failure 404 {string} string "not found"
@@ -257,12 +257,13 @@ func (h handler) listByUrl(ctx *gin.Context, url string) {
 func (h handler) read(ctx *gin.Context, interestId, url string) {
 	groupId := ctx.GetString(model.KeyGroupId)
 	userId := ctx.GetString(model.KeyUserId)
-	cb, err := h.svc.Subscription(ctx, interestId, groupId, userId, url)
+	sub, err := h.svc.Subscription(ctx, interestId, groupId, userId, url)
 	switch {
 	case err == nil:
-		respCb := Callback{
-			Url:    cb.Url,
-			Format: cb.Format.String(),
+		respCb := Subscription{
+			Url:        sub.Url,
+			Format:     sub.Format.String(),
+			ErrorCount: sub.ErrorCount,
 		}
 		ctx.JSON(http.StatusOK, respCb)
 	case errors.Is(err, storage.ErrNotFound):

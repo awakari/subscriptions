@@ -74,6 +74,8 @@ spec:
               value: {{ .Values.db.name }}
             - name: DB_TABLE_NAME
               value: {{ .Values.db.table.name }}
+            - name: DB_TABLE_RETENTION
+              value: "{{ .Values.db.table.retention }}"
             - name: DB_TABLE_SHARD
               value: "{{ .Values.db.table.shard }}"
             - name: DB_TLS_ENABLED
