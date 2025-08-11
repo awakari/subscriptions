@@ -30,6 +30,7 @@ message Subscription {
   bytes secret = 5;
   google.protobuf.Timestamp lastResultAt = 6;
   google.protobuf.Duration intervalMin = 7;
+  uint32 errorCount = 8;
 }
 
 message UpdateRequest {

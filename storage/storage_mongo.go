@@ -506,6 +506,7 @@ func (s storageMongo) ListByInterest(ctx context.Context, limit uint32, interest
 				Format:       model.Format(rec.Fmt),
 				IntervalMin:  rec.IntervalMin,
 				LastResultAt: rec.LastResultAt,
+				ErrorCount:   rec.ErrorCount,
 			})
 		}
 	}

@@ -69,6 +69,7 @@ func (c controller) ListByInterest(ctx context.Context, req *ListByInterestReque
 				Secret:       sub.Secret,
 				LastResultAt: timestamppb.New(sub.LastResultAt),
 				IntervalMin:  durationpb.New(sub.IntervalMin),
+				ErrorCount:   sub.ErrorCount,
 			})
 		}
 	}
