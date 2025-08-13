@@ -103,7 +103,7 @@ func (c storageCache) Update(ctx context.Context, sub model.Subscription, delive
 	return
 }
 
-func (c storageCache) Read(ctx context.Context, interestId, groupId, userId, url string) (cb model.Subscription, err error) {
+func (c storageCache) Read(ctx context.Context, interestId, groupId, userId, url string) (sub model.Subscription, err error) {
 	k := key(interestId, url)
 	val := new(cacheValueBytes)
 	load := func(_ *cache.Item) (result any, err error) {
@@ -139,12 +139,17 @@ func (c storageCache) Read(ctx context.Context, interestId, groupId, userId, url
 	}
 	switch err {
 	case nil:
-		cb.Url = cv.Url
-		cb.Secret = cv.Secret
-		cb.Format = cv.Format
+		sub.GroupId = cv.GroupId
+		sub.UserId = cv.UserId
+		sub.Url = cv.Url
+		sub.Secret = cv.Secret
+		sub.Format = cv.Format
+		sub.IntervalMin = cv.IntervalMin
+		sub.LastResultAt = cv.LastResultAt
+		sub.ErrorCount = cv.ErrorCount
 	default:
 		c.log.Debug(fmt.Sprintf("cache failure: get key %s: %s", k, err))
-		cb, err = c.stor.Read(ctx, interestId, groupId, userId, url) // fallback
+		sub, err = c.stor.Read(ctx, interestId, groupId, userId, url) // fallback
 	}
 	return
 }
@@ -220,6 +225,7 @@ func (c storageCache) ListByInterest(ctx context.Context, limit uint32, interest
 				Format:       cv.Format,
 				IntervalMin:  cv.IntervalMin,
 				LastResultAt: cv.LastResultAt,
+				ErrorCount:   cv.ErrorCount,
 			})
 		}
 	default:
