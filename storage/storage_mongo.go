@@ -578,7 +578,11 @@ func (s storageMongo) ListByUser(ctx context.Context, limit uint32, groupId, use
 }
 
 func (s storageMongo) CountAll(ctx context.Context) (count int64, err error) {
-	count, err = s.coll.EstimatedDocumentCount(ctx)
+	count, err = s.coll.CountDocuments(ctx, bson.M{
+		attrDeletedAt: bson.M{
+			"$exists": false,
+		},
+	})
 	err = decodeError(err, "", "")
 	return
 }
