@@ -296,8 +296,13 @@ func (s storageMongo) Create(ctx context.Context, sub model.Subscription) (err e
 				"$exists": true,
 			},
 		})
-		if errDel == nil && r.DeletedCount > 0 {
-			err = s.Create(ctx, sub)
+		switch errDel {
+		case nil:
+			if r.DeletedCount > 0 {
+				err = s.Create(ctx, sub)
+			}
+		default:
+			err = errDel
 		}
 	}
 	err = decodeError(err, sub.InterestId, sub.Url)
