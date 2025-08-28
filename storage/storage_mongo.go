@@ -287,6 +287,19 @@ func (s storageMongo) Create(ctx context.Context, sub model.Subscription) (err e
 		IntervalMin: sub.IntervalMin,
 	}
 	_, err = s.coll.InsertOne(ctx, rec)
+	if mongo.IsDuplicateKeyError(err) {
+		// attempt to delete the tombstone and retry the creation
+		r, errDel := s.coll.DeleteOne(ctx, bson.M{
+			attrInterestId: sub.InterestId,
+			attrUrl:        sub.Url,
+			attrDeletedAt: bson.M{
+				"$exists": true,
+			},
+		})
+		if errDel == nil && r.DeletedCount > 0 {
+			err = s.Create(ctx, sub)
+		}
+	}
 	err = decodeError(err, sub.InterestId, sub.Url)
 	return
 }

@@ -59,14 +59,22 @@ func TestStorageMongo_Create(t *testing.T) {
 	//
 	defer clear(ctx, t, s.(storageMongo))
 	//
-	err = s.Create(ctx, model.Subscription{
+	require.Nil(t, s.Create(ctx, model.Subscription{
 		InterestId: "interest0",
 		GroupId:    "group0",
 		UserId:     "user0",
 		Url:        "url0",
-	})
-	require.Nil(t, err)
-	//
+	}))
+
+	// tombstone
+	require.Nil(t, s.Create(ctx, model.Subscription{
+		InterestId: "interest1",
+		GroupId:    "group0",
+		UserId:     "user0",
+		Url:        "url1",
+	}))
+	require.Nil(t, s.Delete(ctx, "interest1", "group0", "user0", "url1"))
+
 	cases := map[string]struct {
 		src model.Subscription
 		err error
@@ -91,6 +99,16 @@ func TestStorageMongo_Create(t *testing.T) {
 				IntervalMin: 1 * time.Second,
 			},
 			err: ErrConflict,
+		},
+		"tombstone": {
+			src: model.Subscription{
+				InterestId:  "interest1",
+				GroupId:     "group0",
+				UserId:      "user0",
+				Url:         "url1",
+				Format:      model.FormatRss,
+				IntervalMin: 1 * time.Minute,
+			},
 		},
 	}
 	//
